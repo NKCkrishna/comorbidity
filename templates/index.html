@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Knee OA Clinical Support</title>
+    <title>Knee OA Clinical Support - Enhanced</title>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=Work+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -23,6 +24,9 @@
             --text-light: #8a8a8a;
             --border: #e8e3d8;
             --shadow: rgba(26, 71, 42, 0.08);
+            --pain-low: #fef3c7;
+            --pain-medium: #fbbf24;
+            --pain-high: #dc2626;
         }
 
         body {
@@ -36,7 +40,7 @@
         }
 
         .container {
-            max-width: 900px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 60px 30px;
         }
@@ -60,7 +64,7 @@
             font-size: 1.1rem;
             color: var(--text-mid);
             font-weight: 300;
-            max-width: 600px;
+            max-width: 700px;
             margin: 0 auto;
         }
 
@@ -138,7 +142,9 @@
             border-radius: 3px;
             background: linear-gradient(to right, var(--primary-light), var(--accent));
             outline: none;
-            -webkit-appearance: none;
+            appearance: none;          /* Standard */
+            -webkit-appearance: none;  /* Chrome, Safari */
+            -moz-appearance: none;-webkit-appearance: none;
         }
 
         input[type="range"]::-webkit-slider-thumb {
@@ -209,6 +215,240 @@
         .radio-option input[type="radio"]:checked + span {
             font-weight: 600;
             color: var(--primary);
+        }
+
+        /* Body Pain Map Styles */
+        .pain-map-container {
+            margin-top: 30px;
+            padding: 30px;
+            background: var(--bg-main);
+            border-radius: 12px;
+            border: 2px dashed var(--border);
+        }
+
+        .pain-map-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .pain-map-header h3 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.4rem;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .pain-map-header p {
+            color: var(--text-mid);
+            font-size: 0.9rem;
+        }
+
+        .body-diagram {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 60px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .body-view {
+            text-align: center;
+        }
+
+        .body-view h4 {
+            color: var(--text-mid);
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .body-svg-container {
+            position: relative;
+            width: 200px;
+            height: 400px;
+            cursor: pointer;
+        }
+
+        .body-part {
+            fill: #e5e7eb;
+            stroke: var(--primary);
+            stroke-width: 2;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .body-part:hover {
+            fill: #d1d5db;
+            stroke-width: 3;
+        }
+
+        .body-part.selected {
+            fill: var(--pain-high);
+            stroke: #991b1b;
+            stroke-width: 3;
+        }
+
+        .pain-intensity-selector {
+            margin-top: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        .intensity-levels {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .intensity-option {
+            flex: 1;
+            max-width: 150px;
+            padding: 15px;
+            text-align: center;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .intensity-option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+
+        .intensity-option.selected {
+            border-width: 3px;
+            transform: translateY(-2px);
+        }
+
+        .intensity-option.low {
+            border-color: var(--pain-low);
+            background: var(--pain-low);
+        }
+
+        .intensity-option.low.selected {
+            border-color: #f59e0b;
+        }
+
+        .intensity-option.medium {
+            border-color: var(--pain-medium);
+            background: var(--pain-medium);
+            color: white;
+        }
+
+        .intensity-option.medium.selected {
+            border-color: #d97706;
+        }
+
+        .intensity-option.high {
+            border-color: var(--pain-high);
+            background: var(--pain-high);
+            color: white;
+        }
+
+        .intensity-option.high.selected {
+            border-color: #991b1b;
+        }
+
+        .selected-pains-summary {
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .selected-pains-summary.show {
+            display: block;
+        }
+
+        .pain-tag {
+            display: inline-block;
+            padding: 8px 16px;
+            margin: 5px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .pain-tag.low {
+            background: var(--pain-low);
+            color: #78350f;
+        }
+
+        .pain-tag.medium {
+            background: var(--pain-medium);
+            color: white;
+        }
+
+        .pain-tag.high {
+            background: var(--pain-high);
+            color: white;
+        }
+
+        .pain-tag .remove {
+            margin-left: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* Visualization Styles */
+        .viz-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .viz-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 12px var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .viz-card h3 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.3rem;
+            color: var(--primary);
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        .metric-display {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .metric-item {
+            padding: 15px;
+            background: var(--bg-main);
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .metric-label {
+            font-size: 0.85rem;
+            color: var(--text-mid);
+            margin-bottom: 5px;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            font-family: 'Crimson Pro', serif;
         }
 
         .button-group {
@@ -443,7 +683,6 @@
             transform: rotate(90deg);
         }
 
-        /* Loading Animation */
         .loading-container {
             text-align: center;
             padding: 60px 20px;
@@ -513,7 +752,6 @@
             50% { opacity: 1; }
         }
 
-        /* Plan Content Styles */
         .plan-content {
             animation: fadeInContent 0.6s ease;
         }
@@ -573,14 +811,6 @@
             font-weight: 600;
         }
 
-        .plan-content code {
-            background: var(--bg-main);
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: monospace;
-            color: var(--primary);
-        }
-
         .btn-generate {
             background: linear-gradient(135deg, #d4a574 0%, #b8884d 100%);
             color: white;
@@ -593,16 +823,6 @@
         .btn-generate:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 28px rgba(212, 165, 116, 0.5);
-        }
-
-        @media (max-width: 768px) {
-            .modal-content {
-                padding: 30px 20px;
-            }
-
-            .dna-loader {
-                transform: scale(0.8);
-            }
         }
 
         @media (max-width: 768px) {
@@ -629,18 +849,39 @@
             .radio-group {
                 flex-direction: column;
             }
+
+            .body-diagram {
+                flex-direction: column;
+                gap: 30px;
+            }
+
+            .viz-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                padding: 30px 20px;
+            }
+
+            .intensity-levels {
+                flex-direction: column;
+            }
+
+            .intensity-option {
+                max-width: 100%;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Knee Osteoarthritis Clinical Decision Support</h1>
-            <p class="subtitle">Predictive analytics for drug response and comorbidity assessment in knee OA patients</p>
+            <h1>🏥 Knee Osteoarthritis Clinical Decision Support</h1>
+            <p class="subtitle">Advanced predictive analytics for drug response and comorbidity assessment with personalized treatment planning</p>
         </header>
 
         <div class="card">
-            <h2>Patient Information</h2>
+            <h2>📋 Patient Information</h2>
             <form id="patientForm">
                 <div class="form-grid">
                     <div class="form-group">
@@ -712,12 +953,167 @@
                     </div>
                 </div>
 
+                <!-- Pain Location Mapping -->
+                <div class="pain-map-container">
+                    <div class="pain-map-header">
+                        <h3>🎯 Pain Location Mapping</h3>
+                        <p>Click on body parts where you experience pain and select intensity level</p>
+                    </div>
+
+                    <div class="body-diagram">
+                        <div class="body-view">
+                            <h4>Front View</h4>
+                            <svg class="body-svg-container" viewBox="0 0 200 400" id="bodyFront">
+                                <!-- Head -->
+                                <ellipse cx="100" cy="30" rx="25" ry="30" class="body-part" data-part="Head" data-view="front"/>
+                                
+                                <!-- Neck -->
+                                <rect x="90" y="55" width="20" height="15" class="body-part" data-part="Neck" data-view="front"/>
+                                
+                                <!-- Shoulders -->
+                                <ellipse cx="65" cy="80" rx="20" ry="12" class="body-part" data-part="Left Shoulder" data-view="front"/>
+                                <ellipse cx="135" cy="80" rx="20" ry="12" class="body-part" data-part="Right Shoulder" data-view="front"/>
+                                
+                                <!-- Chest -->
+                                <rect x="75" y="70" width="50" height="50" rx="5" class="body-part" data-part="Chest" data-view="front"/>
+                                
+                                <!-- Arms -->
+                                <rect x="45" y="90" width="15" height="60" rx="7" class="body-part" data-part="Left Upper Arm" data-view="front"/>
+                                <rect x="140" y="90" width="15" height="60" rx="7" class="body-part" data-part="Right Upper Arm" data-view="front"/>
+                                
+                                <!-- Elbows -->
+                                <ellipse cx="52" cy="155" rx="10" ry="8" class="body-part" data-part="Left Elbow" data-view="front"/>
+                                <ellipse cx="148" cy="155" rx="10" ry="8" class="body-part" data-part="Right Elbow" data-view="front"/>
+                                
+                                <!-- Forearms -->
+                                <rect x="47" y="160" width="12" height="50" rx="6" class="body-part" data-part="Left Forearm" data-view="front"/>
+                                <rect x="141" y="160" width="12" height="50" rx="6" class="body-part" data-part="Right Forearm" data-view="front"/>
+                                
+                                <!-- Hands -->
+                                <ellipse cx="53" cy="220" rx="8" ry="12" class="body-part" data-part="Left Hand" data-view="front"/>
+                                <ellipse cx="147" cy="220" rx="8" ry="12" class="body-part" data-part="Right Hand" data-view="front"/>
+                                
+                                <!-- Abdomen -->
+                                <rect x="80" y="120" width="40" height="40" rx="5" class="body-part" data-part="Abdomen" data-view="front"/>
+                                
+                                <!-- Hips -->
+                                <ellipse cx="85" cy="170" rx="12" ry="15" class="body-part" data-part="Left Hip" data-view="front"/>
+                                <ellipse cx="115" cy="170" rx="12" ry="15" class="body-part" data-part="Right Hip" data-view="front"/>
+                                
+                                <!-- Thighs -->
+                                <rect x="75" y="185" width="18" height="70" rx="9" class="body-part" data-part="Left Thigh" data-view="front"/>
+                                <rect x="107" y="185" width="18" height="70" rx="9" class="body-part" data-part="Right Thigh" data-view="front"/>
+                                
+                                <!-- Knees -->
+                                <ellipse cx="84" cy="260" rx="12" ry="10" class="body-part" data-part="Left Knee" data-view="front"/>
+                                <ellipse cx="116" cy="260" rx="12" ry="10" class="body-part" data-part="Right Knee" data-view="front"/>
+                                
+                                <!-- Lower Legs -->
+                                <rect x="77" y="270" width="14" height="80" rx="7" class="body-part" data-part="Left Lower Leg" data-view="front"/>
+                                <rect x="109" y="270" width="14" height="80" rx="7" class="body-part" data-part="Right Lower Leg" data-view="front"/>
+                                
+                                <!-- Ankles -->
+                                <ellipse cx="84" cy="355" rx="8" ry="6" class="body-part" data-part="Left Ankle" data-view="front"/>
+                                <ellipse cx="116" cy="355" rx="8" ry="6" class="body-part" data-part="Right Ankle" data-view="front"/>
+                                
+                                <!-- Feet -->
+                                <ellipse cx="84" cy="375" rx="10" ry="15" class="body-part" data-part="Left Foot" data-view="front"/>
+                                <ellipse cx="116" cy="375" rx="10" ry="15" class="body-part" data-part="Right Foot" data-view="front"/>
+                            </svg>
+                        </div>
+
+                        <div class="body-view">
+                            <h4>Back View</h4>
+                            <svg class="body-svg-container" viewBox="0 0 200 400" id="bodyBack">
+                                <!-- Head -->
+                                <ellipse cx="100" cy="30" rx="25" ry="30" class="body-part" data-part="Head" data-view="back"/>
+                                
+                                <!-- Neck -->
+                                <rect x="90" y="55" width="20" height="15" class="body-part" data-part="Neck" data-view="back"/>
+                                
+                                <!-- Upper Back -->
+                                <rect x="75" y="70" width="50" height="35" rx="5" class="body-part" data-part="Upper Back" data-view="back"/>
+                                
+                                <!-- Lower Back -->
+                                <rect x="80" y="110" width="40" height="50" rx="5" class="body-part" data-part="Lower Back" data-view="back"/>
+                                
+                                <!-- Shoulders -->
+                                <ellipse cx="65" cy="80" rx="20" ry="12" class="body-part" data-part="Left Shoulder" data-view="back"/>
+                                <ellipse cx="135" cy="80" rx="20" ry="12" class="body-part" data-part="Right Shoulder" data-view="back"/>
+                                
+                                <!-- Arms -->
+                                <rect x="45" y="90" width="15" height="60" rx="7" class="body-part" data-part="Left Upper Arm" data-view="back"/>
+                                <rect x="140" y="90" width="15" height="60" rx="7" class="body-part" data-part="Right Upper Arm" data-view="back"/>
+                                
+                                <!-- Elbows -->
+                                <ellipse cx="52" cy="155" rx="10" ry="8" class="body-part" data-part="Left Elbow" data-view="back"/>
+                                <ellipse cx="148" cy="155" rx="10" ry="8" class="body-part" data-part="Right Elbow" data-view="back"/>
+                                
+                                <!-- Forearms -->
+                                <rect x="47" y="160" width="12" height="50" rx="6" class="body-part" data-part="Left Forearm" data-view="back"/>
+                                <rect x="141" y="160" width="12" height="50" rx="6" class="body-part" data-part="Right Forearm" data-view="back"/>
+                                
+                                <!-- Hands -->
+                                <ellipse cx="53" cy="220" rx="8" ry="12" class="body-part" data-part="Left Hand" data-view="back"/>
+                                <ellipse cx="147" cy="220" rx="8" ry="12" class="body-part" data-part="Right Hand" data-view="back"/>
+                                
+                                <!-- Hips/Glutes -->
+                                <ellipse cx="85" cy="170" rx="12" ry="15" class="body-part" data-part="Left Hip" data-view="back"/>
+                                <ellipse cx="115" cy="170" rx="12" ry="15" class="body-part" data-part="Right Hip" data-view="back"/>
+                                
+                                <!-- Thighs -->
+                                <rect x="75" y="185" width="18" height="70" rx="9" class="body-part" data-part="Left Thigh" data-view="back"/>
+                                <rect x="107" y="185" width="18" height="70" rx="9" class="body-part" data-part="Right Thigh" data-view="back"/>
+                                
+                                <!-- Knees -->
+                                <ellipse cx="84" cy="260" rx="12" ry="10" class="body-part" data-part="Left Knee" data-view="back"/>
+                                <ellipse cx="116" cy="260" rx="12" ry="10" class="body-part" data-part="Right Knee" data-view="back"/>
+                                
+                                <!-- Calves -->
+                                <rect x="77" y="270" width="14" height="80" rx="7" class="body-part" data-part="Left Calf" data-view="back"/>
+                                <rect x="109" y="270" width="14" height="80" rx="7" class="body-part" data-part="Right Calf" data-view="back"/>
+                                
+                                <!-- Ankles -->
+                                <ellipse cx="84" cy="355" rx="8" ry="6" class="body-part" data-part="Left Ankle" data-view="back"/>
+                                <ellipse cx="116" cy="355" rx="8" ry="6" class="body-part" data-part="Right Ankle" data-view="back"/>
+                                
+                                <!-- Feet -->
+                                <ellipse cx="84" cy="375" rx="10" ry="15" class="body-part" data-part="Left Foot" data-view="back"/>
+                                <ellipse cx="116" cy="375" rx="10" ry="15" class="body-part" data-part="Right Foot" data-view="back"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="pain-intensity-selector" id="intensitySelector" style="display: none;">
+                        <h4 style="text-align: center; color: var(--primary); margin-bottom: 10px;">Select Pain Intensity for <span id="selectedPartName"></span></h4>
+                        <div class="intensity-levels">
+                            <div class="intensity-option low" data-intensity="low">
+                                <div style="font-weight: 600; margin-bottom: 5px;">Mild</div>
+                                <div style="font-size: 0.85rem;">1-3</div>
+                            </div>
+                            <div class="intensity-option medium" data-intensity="medium">
+                                <div style="font-weight: 600; margin-bottom: 5px;">Moderate</div>
+                                <div style="font-size: 0.85rem;">4-6</div>
+                            </div>
+                            <div class="intensity-option high" data-intensity="high">
+                                <div style="font-weight: 600; margin-bottom: 5px;">Severe</div>
+                                <div style="font-size: 0.85rem;">7-10</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="selected-pains-summary" id="painsSummary">
+                        <h4 style="color: var(--primary); margin-bottom: 15px;">📍 Selected Pain Locations:</h4>
+                        <div id="painTags"></div>
+                    </div>
+                </div>
+
                 <div class="button-group">
                     <button type="button" class="btn-primary" onclick="predict('drug_response')">
-                        Predict Drug Response
+                        💊 Predict Drug Response
                     </button>
                     <button type="button" class="btn-secondary" onclick="predict('comorbidity')">
-                        Predict Comorbidity Cluster
+                        🔬 Predict Comorbidity Cluster
                     </button>
                     <button type="button" class="btn-generate" onclick="generatePersonalizedPlan()">
                         🌟 Generate Personalized Diet & Fitness Plan
@@ -727,27 +1123,174 @@
 
             <div id="result"></div>
         </div>
+
+        <!-- Visualizations Card -->
+        <div class="card" id="vizCard" style="display: none;">
+            <h2>📊 Patient Analytics Dashboard</h2>
+            <div class="viz-grid">
+                <div class="viz-card">
+                    <h3>Risk Profile</h3>
+                    <div class="chart-container">
+                        <canvas id="riskChart"></canvas>
+                    </div>
+                </div>
+                <div class="viz-card">
+                    <h3>Clinical Metrics</h3>
+                    <div class="metric-display">
+                        <div class="metric-item">
+                            <div class="metric-label">BMI Category</div>
+                            <div class="metric-value" id="bmiCategory">-</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-label">OA Severity</div>
+                            <div class="metric-value" id="oaSeverityDisplay">-</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-label">Pain Level</div>
+                            <div class="metric-value" id="painLevelDisplay">-</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-label">CRP Status</div>
+                            <div class="metric-value" id="crpStatus">-</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="viz-card">
+                    <h3>Pain Distribution</h3>
+                    <div class="chart-container">
+                        <canvas id="painChart"></canvas>
+                    </div>
+                </div>
+                <div class="viz-card">
+                    <h3>Treatment Timeline</h3>
+                    <div class="chart-container">
+                        <canvas id="timelineChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Modal for Personalized Plan -->
     <div id="planModal" class="modal">
         <div class="modal-content">
             <button class="modal-close" onclick="closePlanModal()">&times;</button>
-            <div id="modalBody">
-                <!-- Loading or Plan content will be inserted here -->
-            </div>
+            <div id="modalBody"></div>
         </div>
     </div>
 
     <script>
+        // Global state
+        let selectedPainLocations = [];
+        let currentSelectedPart = null;
+        let charts = {};
+
         // Update slider values
         document.getElementById('oa_severity').addEventListener('input', function(e) {
             document.getElementById('oa_severity_value').textContent = e.target.value;
+            updateVisualizations();
         });
 
         document.getElementById('pain_score').addEventListener('input', function(e) {
             document.getElementById('pain_score_value').textContent = e.target.value;
+            updateVisualizations();
         });
+
+        // Update visualizations when form changes
+        ['age', 'bmi', 'crp'].forEach(id => {
+            document.getElementById(id).addEventListener('input', updateVisualizations);
+        });
+
+        document.querySelectorAll('input[name="population"], input[name="smoking"]').forEach(el => {
+            el.addEventListener('change', updateVisualizations);
+        });
+
+        // Pain mapping functionality
+        document.querySelectorAll('.body-part').forEach(part => {
+            part.addEventListener('click', function() {
+                const partName = this.dataset.part;
+                currentSelectedPart = partName;
+                
+                document.getElementById('selectedPartName').textContent = partName;
+                document.getElementById('intensitySelector').style.display = 'block';
+                
+                // Scroll to intensity selector
+                document.getElementById('intensitySelector').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            });
+        });
+
+        document.querySelectorAll('.intensity-option').forEach(option => {
+            option.addEventListener('click', function() {
+                if (!currentSelectedPart) return;
+                
+                const intensity = this.dataset.intensity;
+                
+                // Remove existing entry for this part
+                selectedPainLocations = selectedPainLocations.filter(p => p.part !== currentSelectedPart);
+                
+                // Add new entry
+                selectedPainLocations.push({
+                    part: currentSelectedPart,
+                    intensity: intensity
+                });
+                
+                // Update visual feedback
+                updateBodyPartColors();
+                updatePainSummary();
+                updateVisualizations();
+                
+                // Hide intensity selector
+                document.getElementById('intensitySelector').style.display = 'none';
+                currentSelectedPart = null;
+            });
+        });
+
+        function updateBodyPartColors() {
+            // Reset all body parts
+            document.querySelectorAll('.body-part').forEach(part => {
+                part.classList.remove('selected');
+                part.style.fill = '#e5e7eb';
+            });
+            
+            // Color selected parts
+            selectedPainLocations.forEach(pain => {
+                document.querySelectorAll(`.body-part[data-part="${pain.part}"]`).forEach(part => {
+                    part.classList.add('selected');
+                    if (pain.intensity === 'low') {
+                        part.style.fill = 'var(--pain-low)';
+                    } else if (pain.intensity === 'medium') {
+                        part.style.fill = 'var(--pain-medium)';
+                    } else {
+                        part.style.fill = 'var(--pain-high)';
+                    }
+                });
+            });
+        }
+
+        function updatePainSummary() {
+            const summary = document.getElementById('painsSummary');
+            const tagsContainer = document.getElementById('painTags');
+            
+            if (selectedPainLocations.length === 0) {
+                summary.classList.remove('show');
+                return;
+            }
+            
+            summary.classList.add('show');
+            tagsContainer.innerHTML = selectedPainLocations.map((pain, index) => {
+                return `<span class="pain-tag ${pain.intensity}">
+                    ${pain.part} (${pain.intensity})
+                    <span class="remove" onclick="removePainLocation(${index})">✕</span>
+                </span>`;
+            }).join('');
+        }
+
+        function removePainLocation(index) {
+            selectedPainLocations.splice(index, 1);
+            updateBodyPartColors();
+            updatePainSummary();
+            updateVisualizations();
+        }
 
         // Prediction function
         async function predict(predictionType) {
@@ -775,6 +1318,10 @@
                     btn.classList.add('loading');
                 }
             });
+
+            // Show visualizations
+            document.getElementById('vizCard').style.display = 'block';
+            updateVisualizations();
 
             try {
                 const response = await fetch('/predict', {
@@ -825,7 +1372,8 @@
                 oa_severity: document.getElementById('oa_severity').value,
                 smoking: document.querySelector('input[name="smoking"]:checked').value,
                 pain_score: document.getElementById('pain_score').value,
-                drug_type: document.getElementById('drug_type').value
+                drug_type: document.getElementById('drug_type').value,
+                pain_locations: selectedPainLocations
             };
 
             // Show modal with loading animation
@@ -884,31 +1432,16 @@
                         <div class="dna-strand"></div>
                     </div>
                     <div class="loading-text">Crafting Your Personalized Plan</div>
-                    <div class="loading-subtext">Analyzing your health profile and generating custom recommendations...</div>
+                    <div class="loading-subtext">Analyzing your health profile and pain locations...</div>
                 </div>
             `;
             document.getElementById('modalBody').innerHTML = loadingHTML;
         }
 
         function displayPlan(planText) {
-            // Convert markdown to HTML (basic conversion)
-            let htmlContent = planText
-                .replace(/#{3} (.*)/g, '<h3>$1</h3>')
-                .replace(/#{2} (.*)/g, '<h2>$1</h2>')
-                .replace(/#{1} (.*)/g, '<h1>$1</h1>')
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                .replace(/\n\n/g, '</p><p>')
-                .replace(/\n- /g, '<li>')
-                .replace(/<li>(.*?)(?=<li>|<\/p>|$)/g, '<li>$1</li>')
-                .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
-                .replace(/\n/g, '<br>');
-
-            htmlContent = '<p>' + htmlContent + '</p>';
-
             document.getElementById('modalBody').innerHTML = `
                 <div class="plan-content">
-                    ${htmlContent}
+                    ${planText}
                 </div>
             `;
         }
@@ -929,6 +1462,231 @@
             if (e.target === this) {
                 closePlanModal();
             }
+        });
+
+        // Visualization functions
+        function updateVisualizations() {
+            const age = parseInt(document.getElementById('age').value);
+            const bmi = parseFloat(document.getElementById('bmi').value);
+            const crp = parseFloat(document.getElementById('crp').value);
+            const oaSeverity = parseInt(document.getElementById('oa_severity').value);
+            const painScore = parseInt(document.getElementById('pain_score').value);
+            const population = document.querySelector('input[name="population"]:checked').value;
+
+            // Update metrics
+            const bmiCategory = getBMICategory(bmi, population);
+            document.getElementById('bmiCategory').textContent = bmiCategory;
+            document.getElementById('oaSeverityDisplay').textContent = `${oaSeverity}/4`;
+            document.getElementById('painLevelDisplay').textContent = `${painScore}/10`;
+            document.getElementById('crpStatus').textContent = getCRPStatus(crp);
+
+            // Update risk chart
+            updateRiskChart(age, bmi, crp, oaSeverity, painScore);
+            
+            // Update pain distribution chart
+            updatePainChart();
+            
+            // Update timeline chart
+            updateTimelineChart(oaSeverity);
+        }
+
+        function getBMICategory(bmi, population) {
+            if (population === 'Asian') {
+                if (bmi < 23) return 'Normal';
+                if (bmi < 25) return 'Overweight';
+                return 'Obese';
+            } else {
+                if (bmi < 25) return 'Normal';
+                if (bmi < 30) return 'Overweight';
+                return 'Obese';
+            }
+        }
+
+        function getCRPStatus(crp) {
+            if (crp < 3) return 'Low';
+            if (crp < 10) return 'Moderate';
+            return 'High';
+        }
+
+        function updateRiskChart(age, bmi, crp, oaSeverity, painScore) {
+            const ctx = document.getElementById('riskChart');
+            
+            if (charts.risk) {
+                charts.risk.destroy();
+            }
+
+            const riskFactors = {
+                'Age Risk': Math.min(100, (age / 80) * 100),
+                'BMI Risk': Math.min(100, (bmi / 35) * 100),
+                'Inflammation': Math.min(100, (crp / 20) * 100),
+                'OA Severity': (oaSeverity / 4) * 100,
+                'Pain Level': (painScore / 10) * 100
+            };
+
+            charts.risk = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: Object.keys(riskFactors),
+                    datasets: [{
+                        label: 'Risk Profile',
+                        data: Object.values(riskFactors),
+                        backgroundColor: 'rgba(26, 71, 42, 0.2)',
+                        borderColor: 'rgba(26, 71, 42, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(26, 71, 42, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(26, 71, 42, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                stepSize: 20
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        function updatePainChart() {
+            const ctx = document.getElementById('painChart');
+            
+            if (charts.pain) {
+                charts.pain.destroy();
+            }
+
+            if (selectedPainLocations.length === 0) {
+                charts.pain = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['No Pain Locations Selected'],
+                        datasets: [{
+                            data: [1],
+                            backgroundColor: ['#e5e7eb']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+                return;
+            }
+
+            const intensityCounts = {
+                'Mild': 0,
+                'Moderate': 0,
+                'Severe': 0
+            };
+
+            selectedPainLocations.forEach(pain => {
+                if (pain.intensity === 'low') intensityCounts['Mild']++;
+                else if (pain.intensity === 'medium') intensityCounts['Moderate']++;
+                else intensityCounts['Severe']++;
+            });
+
+            charts.pain = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(intensityCounts).filter(k => intensityCounts[k] > 0),
+                    datasets: [{
+                        data: Object.values(intensityCounts).filter(v => v > 0),
+                        backgroundColor: [
+                            'rgba(254, 243, 199, 0.8)',
+                            'rgba(251, 191, 36, 0.8)',
+                            'rgba(220, 38, 38, 0.8)'
+                        ],
+                        borderColor: [
+                            '#f59e0b',
+                            '#d97706',
+                            '#991b1b'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateTimelineChart(oaSeverity) {
+            const ctx = document.getElementById('timelineChart');
+            
+            if (charts.timeline) {
+                charts.timeline.destroy();
+            }
+
+            const months = ['Current', '3 Months', '6 Months', '9 Months', '12 Months'];
+            const expectedImprovement = months.map((m, i) => {
+                if (i === 0) return oaSeverity * 25;
+                const improvement = Math.max(0, oaSeverity * 25 - (i * 10));
+                return improvement;
+            });
+
+            charts.timeline = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: 'Expected Pain Reduction (%)',
+                        data: expectedImprovement,
+                        borderColor: 'rgba(212, 165, 116, 1)',
+                        backgroundColor: 'rgba(212, 165, 116, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Pain Level (%)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize visualizations on page load
+        window.addEventListener('load', function() {
+            updateVisualizations();
         });
     </script>
 </body>
