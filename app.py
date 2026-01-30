@@ -1,8 +1,12 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory
 import pandas as pd
 import pickle
 from google import genai
 import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -16,7 +20,7 @@ le_drug_response = data['le_drug_response']
 le_comorbidity = data['le_comorbidity']
 
 # Configure Gemini API
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', 'AIzaSyDLVM3lIEFLnyl4Xfe5CLc5FkRNGFFmmro')
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 
@@ -105,7 +109,7 @@ def predict():
 def generate_plan():
     try:
         # Check if API key is configured
-        if not GEMINI_API_KEY or GEMINI_API_KEY == 'your-api-key-here':
+        if not GEMINI_API_KEY or GEMINI_API_KEY == 'AIzaSyApkVmcnyr7dURRiy8tJdrcuQ9-u7fJzFs':
             return jsonify({
                 'success': False,
                 'error': 'Gemini API key is not configured. Please set GEMINI_API_KEY in app.py or as an environment variable.'
@@ -122,6 +126,24 @@ def generate_plan():
         smoking = data['smoking']
         pain_score = int(data['pain_score'])
         drug_type = data['drug_type']
+        pain_locations = data.get('pain_locations', [])
+        
+        # Format pain locations for the prompt
+        pain_info = ""
+        if pain_locations:
+            pain_by_intensity = {'low': [], 'medium': [], 'high': []}
+            for loc in pain_locations:
+                pain_by_intensity[loc['intensity']].append(loc['part'])
+            
+            pain_info = "\n\nSpecific Pain Locations:\n"
+            if pain_by_intensity['high']:
+                pain_info += f"- SEVERE Pain: {', '.join(pain_by_intensity['high'])}\n"
+            if pain_by_intensity['medium']:
+                pain_info += f"- MODERATE Pain: {', '.join(pain_by_intensity['medium'])}\n"
+            if pain_by_intensity['low']:
+                pain_info += f"- MILD Pain: {', '.join(pain_by_intensity['low'])}\n"
+        else:
+            pain_info = "\n\nNote: No specific pain locations were indicated by the patient.\n"
         
         # Create detailed prompt for Gemini
         prompt = f"""
@@ -137,74 +159,121 @@ Patient Demographics:
 
 Clinical Parameters:
 - OA Severity: {oa_severity}/4 (0=mild, 4=severe)
-- Pain Score: {pain_score}/10
+- Overall Pain Score: {pain_score}/10
 - CRP Level: {crp} mg/L (inflammatory marker)
 - Current Medication: {drug_type}
+
+{pain_info}
+
+CRITICAL INSTRUCTIONS FOR EXERCISE RECOMMENDATIONS:
+Based on the specific pain locations indicated above, you MUST:
+1. Completely AVOID exercises that directly stress or load painful joints
+2. Focus on ALTERNATIVE exercises that work around the painful areas
+3. Provide MODIFIED versions of standard exercises for affected areas
+4. Suggest SUBSTITUTION exercises when primary movements are contraindicated
+
+For example:
+- If knees have severe pain: NO squats, lunges, or jumping; instead recommend pool exercises, seated resistance, and upper body work
+- If shoulders have pain: NO overhead pressing; instead recommend modified lateral raises, front raises at lower angles
+- If back has pain: NO bending/twisting exercises; instead recommend core bracing, bird dogs, dead bugs
+- If hips have pain: NO deep hip flexion exercises; instead recommend supine leg exercises, resistance band work
 
 Instructions:
 Generate a detailed, actionable plan with the following sections:
 
-1. Diet Plan Overview - Brief summary of dietary goals (2-3 sentences)
+1. Diet Plan Overview
+   - Brief summary of dietary goals tailored to reduce inflammation and support joint health
+   - Consider CRP level of {crp} mg/L for inflammation management
 
-2. Daily Meal Plan - Provide specific meals for:
-   - Breakfast
+2. Daily Meal Plan
+   Provide specific meals for:
+   - Breakfast (with anti-inflammatory ingredients)
    - Mid-morning Snack
-   - Lunch
+   - Lunch (protein-rich, joint-supporting)
    - Evening Snack
-   - Dinner
+   - Dinner (light, nutrient-dense)
    
-   For each meal, include:
-   - Specific food items with approximate portions
-   - Brief rationale (anti-inflammatory, joint health, weight management, etc.)
+   For each meal:
+   - List specific food items with approximate portions
+   - Include rationale (anti-inflammatory properties, joint health, weight management)
+   - Consider {population} dietary preferences
 
-3. Key Nutritional Guidelines - List 5-6 important dietary principles:
-   - Foods to emphasize (omega-3, antioxidants, etc.)
-   - Foods to limit or avoid
-   - Hydration goals
-   - Supplements to consider (Vitamin D, Omega-3, etc.)
+3. Key Nutritional Guidelines
+   - Foods to emphasize (omega-3 fatty acids, antioxidants, vitamin D, calcium)
+   - Foods to limit or completely avoid
+   - Daily hydration goals (specific volume)
+   - Supplement recommendations with dosages (Vitamin D, Omega-3, Glucosamine, Chondroitin)
+   - Timing of meals relative to medication ({drug_type})
 
-4. Exercise & Fitness Plan - Create a weekly exercise schedule:
-   - Low-impact aerobic exercises (swimming, cycling, walking)
-   - Strengthening exercises for knee support
-   - Flexibility and range-of-motion exercises
-   - Duration and frequency for each activity
-   - Important precautions based on pain level and OA severity
+4. Exercise & Fitness Plan
+   Create a weekly exercise schedule that SPECIFICALLY ADDRESSES the pain locations:
+   
+   For each painful area, provide:
+   - What exercises to COMPLETELY AVOID
+   - Alternative exercises that don't stress that area
+   - Modified versions of standard exercises
+   - Proper form cues to prevent further injury
+   
+   Weekly Structure:
+   - Monday: [Specific exercises avoiding painful areas]
+   - Tuesday: [Different muscle groups, avoiding contraindicated movements]
+   - Wednesday: [Active recovery or gentle mobility]
+   - Thursday: [Strength work around limitations]
+   - Friday: [Cardio that doesn't aggravate pain sites]
+   - Saturday: [Flexibility and ROM work]
+   - Sunday: [Complete rest or very gentle movement]
+   
+   Include:
+   - Duration and repetitions for each exercise
+   - Pain management strategies during exercise
+   - When to stop and seek medical help
+   - Progressive overload strategy as pain improves
 
-5. Lifestyle Recommendations - Include:
-   - Weight management strategies (if BMI indicates need)
-   - Pain management techniques
-   - Activity modifications
-   - Sleep and stress management
+5. Pain-Specific Modifications
+   For EACH painful body part mentioned, provide:
+   - Specific exercises to avoid
+   - Alternative exercises
+   - Pain relief strategies (ice, heat, compression)
+   - Range of motion exercises
+   - When to progress to more challenging movements
 
-6. Important Considerations - List:
-   - Red flags or symptoms requiring immediate medical attention
-   - How to progress exercises safely
-   - When to adjust the plan
+6. Lifestyle Recommendations
+   - Weight management strategies (if BMI indicates need: current {bmi})
+   - Daily activity modifications based on pain locations
+   - Sleep position recommendations for painful areas
+   - Stress management techniques
+   - Smoking cessation plan (if applicable: {smoking})
 
-Critical Requirements:
-- Tailor recommendations to the patient's OA severity and pain level
-- Consider anti-inflammatory foods given CRP level of {crp} mg/L
-- Account for {population} dietary preferences and patterns
-- Provide gentle exercises if pain score is high
-- Address smoking cessation if applicable
-- Consider drug interactions with {drug_type}
-- Be specific and actionable, not generic advice
-- Keep the tone professional but encouraging
+7. Important Safety Considerations
+   - Red flags requiring immediate medical attention
+   - How to distinguish between "good pain" and "bad pain"
+   - Medication timing with meals and exercise
+   - Drug-nutrient interactions with {drug_type}
+   - When to adjust or stop the plan
 
-IMPORTANT FORMATTING RULES:
-- Format your response in clean, professional HTML
-- Use proper HTML tags: <h2> for main section headings, <h3> for subsections, <p> for paragraphs, <ul> and <li> for lists
-- DO NOT use any asterisks (**), underscores (_), or markdown symbols
-- DO NOT use markdown formatting at all
-- Make the response easy to read for both doctors and patients
-- Use clear headings and well-organized lists
-- Start directly with the content, no preamble
+FORMATTING REQUIREMENTS:
+- Use proper HTML formatting throughout
+- Use <h2> for main sections, <h3> for subsections
+- Use <p> for paragraphs, <ul> and <li> for lists
+- Use <strong> for emphasis on important points
+- DO NOT use markdown symbols (**, __, *, etc.)
+- Make exercise contraindications very clear with bold text
+- Use color coding if needed: <span style="color: #dc2626;">AVOID</span> for contraindications
+
+TONE:
+- Professional but encouraging
+- Empathetic to pain limitations
+- Realistic about what's achievable
+- Emphasize safety over speed of progress
+- Motivational while being honest about challenges
+
+Start directly with the content. Be specific, actionable, and tailored to this exact patient profile.
 """
         
         # Generate content using Gemini
         try:
             response = client.models.generate_content(
-                model='gemini-3-flash-preview',
+                model='gemini-2.0-flash-exp',
                 contents=prompt
             )
             
@@ -242,9 +311,11 @@ IMPORTANT FORMATTING RULES:
         }), 400
 
 
+
 import os
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
+
 
