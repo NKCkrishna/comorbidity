@@ -3,10 +3,6 @@ import pandas as pd
 import pickle
 from google import genai
 import os
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
 
 app = Flask(__name__)
 
@@ -109,7 +105,7 @@ def predict():
 def generate_plan():
     try:
         # Check if API key is configured
-        if not GEMINI_API_KEY or GEMINI_API_KEY == 'AIzaSyApkVmcnyr7dURRiy8tJdrcuQ9-u7fJzFs':
+        if not GEMINI_API_KEY or GEMINI_API_KEY == 'your-api-key-here':
             return jsonify({
                 'success': False,
                 'error': 'Gemini API key is not configured. Please set GEMINI_API_KEY in app.py or as an environment variable.'
@@ -317,5 +313,6 @@ import os
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
+
 
 
