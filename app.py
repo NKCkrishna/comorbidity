@@ -16,7 +16,7 @@ le_drug_response = data['le_drug_response']
 le_comorbidity = data['le_comorbidity']
 
 # Configure Gemini API
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', 'AIzaSyCg_UZZmyvumvjDqbFfwP-U8aNJQgEeQG4')
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', 'AIzaSyDLVM3lIEFLnyl4Xfe5CLc5FkRNGFFmmro')
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 
@@ -247,3 +247,4 @@ import os
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
+
